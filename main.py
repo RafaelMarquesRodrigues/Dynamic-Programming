@@ -66,11 +66,14 @@ for test_key in test_keys:
     results = sorted(d.items(), key=operator.itemgetter(1))
     
     #get the best result from them
-    print("DTW:", results[0][1], "Class:", label[results[0][0]])
+    print("DTW:", results[0][1], "Class:", label[results[0][0]], end=(' '*(20 - len(label[results[0][0]]))))
     
     #add a hit if correct
     if results[0][0] == test_key:
         hits = hits + 1
+        print("\tHit.")
+    else:
+        print("\tMiss ({}) .".format(label[test_key]))
 
 print("Accuracy:", hits/len(test_keys))
 
