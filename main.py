@@ -2,10 +2,6 @@
 import operator
 import sys
 
-test_filename = 'test.in'
-training_filename = 'training.in'
-label_filename = 'label.in'
-
 #creates a dictionary with 'class': [numbers of the series] or 'class': name of the class, if its used to read the label
 def readFile(filename, function):
     d = {}
@@ -43,38 +39,45 @@ def dtw(test, training):
 #                       CALCULATING MOVEMENTS
 #####################################################################################
 
-#read files
-test_data = readFile(test_filename, getFloatContent)
-training_data = readFile(training_filename, getFloatContent)
-label = readFile(label_filename, getStrContent)
+def calculateDtw(title, test_filename, training_filename, label_filename):
+    print("**************", title, "**************", sep='\n')
 
-#get list of keys
-test_keys = test_data.keys()
-training_keys = training_data.keys()
+    #read files
+    test_data = readFile(test_filename, getFloatContent)
+    training_data = readFile(training_filename, getFloatContent)
+    label = readFile(label_filename, getStrContent)
 
-hits = 0
+    #get list of keys
+    test_keys = test_data.keys()
+    training_keys = training_data.keys()
 
-#for each test key calculate dtw and compare with the training key
-for test_key in test_keys:
-    d = {}
-    
-    #calculating dtw for each training series with the actual test series
-    for training_key in training_keys:
-        d[training_key] = dtw(test_data[test_key], training_data[training_key])
-    
-    #sort all the dtw calculated
-    results = sorted(d.items(), key=operator.itemgetter(1))
-    
-    #get the best result from them
-    print("DTW:", results[0][1], "Class:", label[results[0][0]], end=(' '*(20 - len(label[results[0][0]]))))
-    
-    #add a hit if correct
-    if results[0][0] == test_key:
-        hits = hits + 1
-        print("\tHit.")
-    else:
-        print("\tMiss ({}) .".format(label[test_key]))
+    hits = 0
 
-print("Accuracy:", hits/len(test_keys))
+    #for each test key calculate dtw and compare with the training key
+    for test_key in test_keys:
+        d = {}
+        
+        #calculating dtw for each training series with the actual test series
+        for training_key in training_keys:
+            d[training_key] = dtw(test_data[test_key], training_data[training_key])
+        
+        #sort all the dtw calculated
+        results = sorted(d.items(), key=operator.itemgetter(1))
+        
+        #get the best result from them
+        print("DTW:", results[0][1], "Class:", label[results[0][0]], end=(' '*(20 - len(label[results[0][0]]))))
+        
+        #add a hit if correct
+        if results[0][0] == test_key:
+            hits = hits + 1
+            print("\tHit.")
+        else:
+            print("\tMiss ({}) .".format(label[test_key]))
 
+    print("Accuracy:", hits/len(test_keys))
+
+calculateDtw("Rotulos 1D", "test.in", "training.in", "label.in")
+
+#precisa fazer a extensão pra calcular esse
+#calculateDtw("Rotulos 3D", "test3D.in", "training3D.in", "label3D.in")
 
