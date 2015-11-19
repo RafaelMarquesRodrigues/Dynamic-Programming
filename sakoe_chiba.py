@@ -19,16 +19,18 @@ def getFloatContent(content):
 def getStrContent(content):
     return content[1]
 
-def calculateDtw(test, training):
+def calculateDtw(test, training, band):
     #start the matrix with max float values
     values = [[sys.float_info.max for i in range(0, len(training) + 1)] for j in range(0, len(test) + 1)]
-   
+
+    displacement = int(len(training)*band)
+
     #(0, 0) position starts with 0
     values[0][0] = 0.0
     
     #calculate the value for each position on the matrix
     for i in range(1, len(test)):
-        for j in range(1, len(training)):
+        for j in range(i - displacement if i - displacement > 0 else i, i + displacement if i + displacement <= len(training) else len(training)):
             values[i][j] = (test[i] - training[j]) * (test[i] - training[j]) + min(values[i-1][j-1], values[i][j-1], values[i-1][j])
     
     #return the dtw value accordingly to the size of the series
@@ -59,7 +61,7 @@ def processFiles(title, test_filename, training_filename, label_filename):
         
         #calculating dtw for each training series with the actual test series
         for training_key in training_keys:
-            d[training_key] = calculateDtw(test_data[test_key], training_data[training_key])
+            d[training_key] = calculateDtw(test_data[test_key], training_data[training_key], 0.5)
         
         #sort all the dtw calculated
         results = sorted(d.items(), key=operator.itemgetter(1))
