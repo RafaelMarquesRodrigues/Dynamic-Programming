@@ -44,22 +44,25 @@ def readLabel(filename):
 
     return d;
 
-def calculateDtw(test, training, band):
+def calculateDtw(test, training):
     #start the matrix with max float values
-    values = [[sys.float_info.max for i in range(0, len(training) + 2)] for j in range(0, len(test) + 2)]
-
-    displacement = int(len(training)*band)
-
+    values = [[sys.float_info.max for i in range(0, int(len(training)/3) + 1)] for j in range(0, int(len(test)/3) + 1)]
+   
     #(0, 0) position starts with 0
     values[0][0] = 0.0
     
-    #calculate the value for each position on the matrix
-    for i in range(1, len(test) + 1):
-        for j in range(i - displacement if i - displacement > 0 else i, i + displacement + 1 if i + displacement + 1 <= len(training) + 1 else len(training) + 1):
-            values[i][j] = (test[i-1] - training[j-1]) * (test[i-1] - training[j-1]) + min(values[i-1][j-1], values[i][j-1], values[i-1][j])
-    
+	#calculate the value for each position on the matrix
+    for i in range(1, int(len(test)/3) + 1):
+        for j in range(1, int(len(training)/3) + 1):
+            aux = 0
+            
+            for k in range(0, 3):
+                aux = aux + ((test[((i-1)*3)+k] - training[((j-1)*3)+k]) * (test[((i-1)*3)+k] - training[((j-1)*3)+k]))
+            
+            values[i][j] = aux + min(values[i-1][j-1], values[i - 1][j], values[i][j - 1])
+
     #return the dtw value accordingly to the size of the series
-    return values[len(test)][len(training)]
+    return values[int(len(test)/3)][int(len(training)/3)]
         
 
 #####################################################################################
@@ -75,18 +78,16 @@ def processFiles(title, test_filename, training_filename, label_filename):
     training_data = readFile(training_filename)
     label = readLabel(label_filename)
 
-    band = 0.1
     cores = multiprocessing.cpu_count()
 
-    print("Calculating movements using {} threads, and {} band size...".format(cores, band))
+    print("Calculating movements using {} threads...".format(cores))
 
     threads = [None] * cores
     q = queue.Queue(cores)
     counter = [0] * cores
 
     for i in range(0, cores):
-        arguments = (band, test_data, training_data, i * int(len(test_data)/cores), (i + 1) * int(len(test_data)/cores), q, counter, i)
-        threads[i] = threading.Thread(group=None, target=startCalculation, args=arguments)
+        threads[i] = threading.Thread(group=None, target=startCalculation, args=(test_data, training_data, i * int(len(test_data)/cores), (i + 1) * int(len(test_data)/cores), q, counter, i))
 
     start = time.time()
 
@@ -120,7 +121,7 @@ def printProgress(thread_stop, counter, cores, total):
         print("[{}/{}]\r".format(calculated, total), end='')
 
 
-def startCalculation(band, test_data, training_data, lowerBound, upperBound, q, counter, index):
+def startCalculation(test_data, training_data, lowerBound, upperBound, q, counter, index):
     hits = 0
 
     #for each test key calculate dtw and compare with the training key
@@ -129,7 +130,7 @@ def startCalculation(band, test_data, training_data, lowerBound, upperBound, q, 
         
         #calculating dtw for each training series with the actual test series
         for training_series in training_data:
-            aux = calculateDtw(test_series.getArray(), training_series.getArray(), band)
+            aux = calculateDtw(test_series.getArray(), training_series.getArray())
 
             if(aux < result):
                 result = aux
@@ -144,4 +145,4 @@ def startCalculation(band, test_data, training_data, lowerBound, upperBound, q, 
     q.put(hits)
 
 if __name__ == "__main__":
-    processFiles("Rotulos 1D - Sakoe Chiba", "test.in", "training.in", "label.in")
+    processFiles("Rotulos 3D", "test3D.in", "training3D.in", "label3D.in")

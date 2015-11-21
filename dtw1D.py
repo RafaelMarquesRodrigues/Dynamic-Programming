@@ -1,4 +1,8 @@
 
+import time
+import queue
+import multiprocessing
+import threading
 import operator
 import sys
 
@@ -48,12 +52,12 @@ def calculateDtw(test, training):
     values[0][0] = 0.0
     
     #calculate the value for each position on the matrix
-    for i in range(1, len(test)):
-        for j in range(1, len(training)):
-            values[i][j] = (test[i] - training[j]) * (test[i] - training[j]) + min(values[i-1][j-1], values[i][j-1], values[i-1][j])
+    for i in range(1, len(test) + 1):
+        for j in range(1, len(training) + 1):
+            values[i][j] = (test[i-1] - training[j-1]) * (test[i-1] - training[j-1]) + min(values[i-1][j-1], values[i][j-1], values[i-1][j])
     
     #return the dtw value accordingly to the size of the series
-    return values[len(test)-1][len(training)-1]
+    return values[len(test)][len(training)]
         
 
 #####################################################################################
@@ -68,11 +72,54 @@ def processFiles(title, test_filename, training_filename, label_filename):
     training_data = readFile(training_filename)
     label = readLabel(label_filename)
 
+    cores = multiprocessing.cpu_count()
+
+    print("Calculating movements using {} threads...".format(cores))
+
+    threads = [None] * cores
+    q = queue.Queue(cores)
+    counter = [0] * cores
+
+    for i in range(0, cores):
+        threads[i] = threading.Thread(group=None, target=startCalculation, args=(test_data, training_data, i * int(len(test_data)/cores), (i + 1) * int(len(test_data)/cores), q, counter, i))
+	
+    start = time.time()
+
+    for i in range(0, cores):
+        threads[i].start()
+     
+    thread_stop = threading.Event()
+    threading.Thread(group=None, target=printProgress, args=(thread_stop, counter, cores, len(test_data))).start()
+
+    for i in range(0, cores):
+        threads[i].join()
+    
+    thread_stop.set()
     hits = 0
-    counter = 0
+
+    while(not q.empty()):
+        hits = hits + q.get()
+
+    print("Accuracy:", hits/len(test_data))
+    print("Time spent: ", time.time() - start)
+
+def printProgress(thread_stop, counter, cores, total):
+
+    while(not thread_stop.is_set()):
+        time.sleep(0.5)
+        calculated = 0
+   
+        for i in range(0, cores):
+            calculated = calculated + counter[i]
+
+        print("[{}/{}]\r".format(calculated, total), end='')
+
+
+def startCalculation(test_data, training_data, lowerBound, upperBound, q, counter, index):
+    hits = 0
 
     #for each test key calculate dtw and compare with the training key
-    for test_series in test_data:
+    for test_series in test_data[lowerBound:upperBound]:
         result = sys.float_info.max
         
         #calculating dtw for each training series with the actual test series
@@ -83,23 +130,13 @@ def processFiles(title, test_filename, training_filename, label_filename):
                 result = aux
                 selectedLabel = training_series.getLabel()
         
-        #get the best result from them
-        #print("DTW:", "{0:.12f}".format(result), "Class:", label[selectedLabel], end=(' '*(20 - len(label[selectedLabel]))))
-        
         #add a hit if correct
         if selectedLabel == test_series.getLabel():
             hits = hits + 1
-        #    print("Hit.")
-        #else:
-        #    print("Miss ({}) .".format(label[test_series.getLabel()]))
+        
+        counter[index] = counter[index] + 1
 
-        counter = counter + 1
-        print("[{}/{}]\r".format(counter, len(test_data)), end='')
+    q.put(hits)
 
-    print("Accuracy:", hits/len(test_data))
-
-processFiles("Rotulos 1D", "test.in", "training.in", "label.in")
-
-#precisa fazer a extensão pra calcular esse
-#processFiles("Rotulos 3D", "test3D.in", "training3D.in", "label3D.in")
-
+if __name__ == "__main__":
+    processFiles("Rotulos 1D", "test.in", "training.in", "label.in")
