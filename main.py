@@ -2,22 +2,43 @@
 import operator
 import sys
 
-#creates a dictionary with 'class': [numbers of the series] or 'class': name of the class, if its used to read the label
-def readFile(filename, function):
-    d = {}
+class Series:
+    
+    def __init__(self, l, a):
+        self.label = l
+        self.array = a
+
+    def getLabel(self):
+        return self.label
+
+    def getArray(self):
+        return self.array
+
+def readFile(filename):
+    d = []
     
     with open(filename) as f:
         for line in f:
+            float_array = []
             content = line.split()
-            d[int(content[0])] = function(content)
+            
+            #reads the series
+            float_array = [float(x) for x in content[1:]]
+
+            d.append(Series(int(content[0]), float_array))  
 
     return d
 
-def getFloatContent(content):
-    return [float(x) for x in content]
+#reads all the labels
+def readLabel(filename):
+    d = {}
 
-def getStrContent(content):
-    return content[1]
+    with open(filename) as f:
+        for line in f:
+            content = line.split()
+            d[int(content[0])] = content[1]
+
+    return d;
 
 def calculateDtw(test, training):
     #start the matrix with max float values
@@ -43,38 +64,39 @@ def processFiles(title, test_filename, training_filename, label_filename):
     print("**************", title, "**************", sep='\n')
 
     #read files
-    test_data = readFile(test_filename, getFloatContent)
-    training_data = readFile(training_filename, getFloatContent)
-    label = readFile(label_filename, getStrContent)
-
-    #get list of keys
-    test_keys = test_data.keys()
-    training_keys = training_data.keys()
+    test_data = readFile(test_filename)
+    training_data = readFile(training_filename)
+    label = readLabel(label_filename)
 
     hits = 0
+    counter = 0
 
     #for each test key calculate dtw and compare with the training key
-    for test_key in test_keys:
-        d = {}
+    for test_series in test_data:
+        result = sys.float_info.max
         
         #calculating dtw for each training series with the actual test series
-        for training_key in training_keys:
-            d[training_key] = calculateDtw(test_data[test_key], training_data[training_key])
-        
-        #sort all the dtw calculated
-        results = sorted(d.items(), key=operator.itemgetter(1))
+        for training_series in training_data:
+            aux = calculateDtw(test_series.getArray(), training_series.getArray())
+
+            if(aux < result):
+                result = aux
+                selectedLabel = training_series.getLabel()
         
         #get the best result from them
-        print("DTW:", "{0:.12f}".format(results[0][1]), "Class:", label[results[0][0]], end=(' '*(20 - len(label[results[0][0]]))))
+        #print("DTW:", "{0:.12f}".format(result), "Class:", label[selectedLabel], end=(' '*(20 - len(label[selectedLabel]))))
         
         #add a hit if correct
-        if results[0][0] == test_key:
+        if selectedLabel == test_series.getLabel():
             hits = hits + 1
-            print("Hit.")
-        else:
-            print("Miss ({}) .".format(label[test_key]))
+        #    print("Hit.")
+        #else:
+        #    print("Miss ({}) .".format(label[test_series.getLabel()]))
 
-    print("Accuracy:", hits/len(test_keys))
+        counter = counter + 1
+        print("[{}/{}]\r".format(counter, len(test_data)), end='')
+
+    print("Accuracy:", hits/len(test_data))
 
 processFiles("Rotulos 1D", "test.in", "training.in", "label.in")
 
