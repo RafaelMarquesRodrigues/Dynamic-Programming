@@ -46,7 +46,7 @@ def readLabel(filename):
 
 def calculateDtw(test, training, band):
     #start the matrix with max float values
-    values = [[sys.float_info.max for i in range(0, len(training) + 2)] for j in range(0, len(test) + 2)]
+    values = [[sys.float_info.max for i in range(0, len(training) + 1)] for j in range(0, len(test) + 1)]
 
     displacement = int(len(training)*band)
 

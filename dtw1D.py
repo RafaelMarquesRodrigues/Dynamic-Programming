@@ -1,4 +1,6 @@
 
+import array
+import numpy
 import time
 import queue
 import multiprocessing
@@ -23,13 +25,15 @@ def readFile(filename):
     
     with open(filename) as f:
         for line in f:
-            float_array = []
+            float_array = array.array('f')
             content = line.split()
             
             #reads the series
-            float_array = [float(x) for x in content[1:]]
+            #float_array = [float(x) for x in content[1:]]
+            float_array = [float(x) for x in content]
 
-            d.append(Series(int(content[0]), float_array))  
+            #d.append(Series(int(content[0]), numpy.array(float_array)))
+            d.append(float_array)
 
     return d
 
@@ -47,7 +51,7 @@ def readLabel(filename):
 def calculateDtw(test, training):
     #start the matrix with max float values
     values = [[sys.float_info.max for i in range(0, len(training) + 1)] for j in range(0, len(test) + 1)]
-   
+  
     #(0, 0) position starts with 0
     values[0][0] = 0.0
     
@@ -124,14 +128,14 @@ def startCalculation(test_data, training_data, lowerBound, upperBound, q, counte
         
         #calculating dtw for each training series with the actual test series
         for training_series in training_data:
-            aux = calculateDtw(test_series.getArray(), training_series.getArray())
+            aux = calculateDtw(test_series[1:], training_series[1:])
 
             if(aux < result):
                 result = aux
-                selectedLabel = training_series.getLabel()
+                selectedLabel = training_series[1]
         
         #add a hit if correct
-        if selectedLabel == test_series.getLabel():
+        if selectedLabel == test_series[1]:
             hits = hits + 1
         
         counter[index] = counter[index] + 1
