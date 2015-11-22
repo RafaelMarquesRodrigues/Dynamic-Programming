@@ -4,10 +4,10 @@ class DTW_Sakoe_Chiba extends DTW {
 	public float calculateDTW(float training_series[], float test_series[], float displacement){
 		float[][] m = new float[training_series.length + 1][test_series.length + 1];
 	
-		for(int i = 0; i <= training_series.length; i++)
-			m[i][0] = Float.MAX_VALUE;
-		for(int i = 0; i <= test_series.length; i++)
-			m[0][i] = Float.MAX_VALUE;
+		for(int i = 0; i <= training_series.length; i++){
+			for(int j = 0; j <= test_series.length; j++)
+				m[i][j] = Float.MAX_VALUE;
+		}
 
 		m[0][0] = 0F;
 
