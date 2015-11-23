@@ -1,5 +1,5 @@
 
-class DTW_3D extends DTW {
+class DTW_3D implements DTW {
 	
 	public float calculateDTW(float training_series[], float test_series[]){
 		float[][] m = new float[(training_series.length/3) + 1][(test_series.length/3) + 1];

@@ -1,5 +1,5 @@
 
-class DTW_1D extends DTW {
+class DTW_1D implements DTW {
 	
 	public float calculateDTW(float training_series[], float test_series[]){
 		float[][] m = new float[training_series.length + 1][test_series.length + 1];

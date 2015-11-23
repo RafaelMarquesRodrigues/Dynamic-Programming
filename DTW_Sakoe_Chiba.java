@@ -1,7 +1,13 @@
 
-class DTW_Sakoe_Chiba extends DTW {
-	
-	public float calculateDTW(float training_series[], float test_series[], float displacement){
+class DTW_Sakoe_Chiba implements DTW {
+	private float displacement;
+
+
+	public DTW_Sakoe_Chiba(float f){
+		displacement = f;
+	}
+
+	public float calculateDTW(float training_series[], float test_series[]){
 		float[][] m = new float[training_series.length + 1][test_series.length + 1];
 	
 		for(int i = 0; i <= training_series.length; i++){
